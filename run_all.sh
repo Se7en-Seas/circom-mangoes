@@ -101,6 +101,10 @@ elif [[ $CIRCUIT_NAME == "keccakn" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
 elif [[ $CIRCUIT_NAME == "mimcn" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "multimimcn" ]]; then
+    echo "{\"a\": \"8904385298540932584375984375983427598475\", \"b\": \"11432532454949349845858585855555985734985743987592843759\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "mimc_sponge_n" ]]; then
+    echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
 elif [[ $CIRCUIT_NAME == "pedersenn" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
 else
