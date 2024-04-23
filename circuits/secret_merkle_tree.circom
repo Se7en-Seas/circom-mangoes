@@ -32,10 +32,14 @@ template DualMux() {
     out[1] <== (in[0] - in[1]) * s + in[1];
 }
 
-// TODO change leafs to be split into 2 numbers, so that smart contracts can pass in keccak256 hashes of the leafs.
+// TODO optionally we could add a single input which is the MiMC hash of all the input data,
+// Then all the leafs would be made secret, and there would be an extra step where the leafs are all hashed down, then the provided leaf hash is constrained to equal that hash.
+// This is nice since it reduces the input amount to 2 inputs, but it means users would need to verify themselves that the hash matches the leafs.
+// TODO what is interesting is we could maybe do the hash method above, but then in the contract we provide the function to hash an array of leafs down
+// then people can submit stings to show that we provided the wrong hash?
 template SecretdMerkleTree(LEAF_COUNT) {
     signal input secret; // Secret value hashed with leafs before tree construction.
-    signal input leafs[LEAF_COUNT];
+    signal input keccakLeafs[2 * LEAF_COUNT]; // Each leaf is composed of 2 keccakLeafs where the first is the left 128 bits and the second is the right 128 bits.
     var arrayLength = 0;
     for (var i=0; 1 != LEAF_COUNT / (2 ** i); i++) {
         arrayLength += LEAF_COUNT / 2 ** (i + 1);
@@ -43,9 +47,21 @@ template SecretdMerkleTree(LEAF_COUNT) {
     signal input pathIndices[arrayLength]; // Do not need pathIndices for the root.
     signal output secretRoot;
 
+    // Internal signals.
+    signal leafs[LEAF_COUNT];
+
     // Components.
+    component keccakLeafHashers[LEAF_COUNT]; // Used to hash the keccak leafs into a single leaf.
     component selectors[arrayLength];
     component hashers[LEAF_COUNT + arrayLength]; // Add LEAF_COUNT to pre-hash every leaf with the secret.
+
+    // Hash keccak leafs into leafs.
+    for (var i=0; i<LEAF_COUNT; i++) {
+        keccakLeafHashers[i] = HashLeftRight();
+        keccakLeafHashers[i].left <== keccakLeafs[i * 2];
+        keccakLeafHashers[i].right <== keccakLeafs[i * 2 + 1];
+        leafs[i] <== keccakLeafHashers[i].out;
+    }
 
     // Hash leafs with secret.
     for (var i=0; i<LEAF_COUNT; i++) {
@@ -80,4 +96,4 @@ template SecretdMerkleTree(LEAF_COUNT) {
     secretRoot <== hashers[hasherOffset - 1].out;
 }
 
-component main {public [leafs]} = SecretdMerkleTree(4);
+component main {public [keccakLeafs]} = SecretdMerkleTree(256);

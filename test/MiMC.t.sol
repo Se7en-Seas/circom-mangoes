@@ -36,24 +36,15 @@ contract MiMCTest is Test {
     }
 
     function testSecretMerkleTree() external {
-        uint256 a = 1;
-        uint256 b = 2;
-        uint256 c = 3;
-        uint256 d = 4;
         uint256 secret = 10;
 
+        uint256 a = hasher.hashMulti(1, 2);
         uint256 leafA = hasher.hashMulti(a, secret);
+        uint256 b = hasher.hashMulti(3, 4);
         uint256 leafB = hasher.hashMulti(b, secret);
-        uint256 leafAB = hasher.hashMulti(leafA, leafB);
+        uint256 root = hasher.hashMulti(leafA, leafB);
 
-        uint256 leafC = hasher.hashMulti(c, secret);
-        uint256 leafD = hasher.hashMulti(d, secret);
-        uint256 leafDC = hasher.hashMulti(leafD, leafC);
-
-        uint256 root = hasher.hashMulti(leafAB, leafDC);
-
-        console.log("Secret Root: %d", root);
-        uint256 expectedRoot = 12467506938138437504673261222371360799109920392556089964481763692350998397811;
+        uint256 expectedRoot = 12496568937140143640907443226343187050369326205835973023618878027235704289017;
         assertEq(root, expectedRoot, "Root does not match expected output");
     }
 }

@@ -36,7 +36,7 @@ POTS_DIR=pots
 
 
 # power value for "powersOfTau28" pre-generated setup files
-POWERTAU=24
+POWERTAU=22
 
 # uncomment to output every actual command being run
 # set -x
@@ -108,7 +108,9 @@ elif [[ $CIRCUIT_NAME == "mimc_sponge_n" ]]; then
 elif [[ $CIRCUIT_NAME == "pedersenn" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
 elif [[ $CIRCUIT_NAME == "secret_merkle_tree" ]]; then
-    echo "{\"leafs\": [\"1\", \"2\", \"3\", \"4\"], \"secret\": \"10\", \"pathIndices\": [\"0\", \"1\", \"0\"]}" > ./${CIRCUIT_NAME}_input.json
+    echo "{\"keccakLeafs\": [\"1\", \"2\", \"3\", \"4\"], \"secret\": \"10\", \"pathIndices\": [\"0\"]}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "secret_merkle_proof" ]]; then
+    echo "{\"keccakLeaf\": [\"1\", \"2\"], \"secret\": \"10\", \"pathIndices\": [\"0\"], \"pathElements\": [\"20720647776736805995271599293687983903163066371706795988900528210329614571103\"], \"root\": \"12496568937140143640907443226343187050369326205835973023618878027235704289017\"}" > ./${CIRCUIT_NAME}_input.json
 else
     echo "[ERROR] No inputs: create branch for CIRCUIT_NAME '$CIRCUIT_NAME' with input data in run_all.sh script"
     exit 1
