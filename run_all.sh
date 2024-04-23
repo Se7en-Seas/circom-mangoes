@@ -107,6 +107,8 @@ elif [[ $CIRCUIT_NAME == "mimc_sponge_n" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
 elif [[ $CIRCUIT_NAME == "pedersenn" ]]; then
     echo "{\"a\": \"1\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "secret_merkle_tree" ]]; then
+    echo "{\"leafs\": [\"1\", \"2\", \"3\", \"4\"], \"secret\": \"10\", \"pathIndices\": [\"0\", \"1\", \"0\"]}" > ./${CIRCUIT_NAME}_input.json
 else
     echo "[ERROR] No inputs: create branch for CIRCUIT_NAME '$CIRCUIT_NAME' with input data in run_all.sh script"
     exit 1
