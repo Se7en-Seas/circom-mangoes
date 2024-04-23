@@ -32,25 +32,34 @@ template DualMux() {
     out[1] <== (in[0] - in[1]) * s + in[1];
 }
 
-// TODO this code does not really work because
-template ShuffledMerkleTree() {
+// TODO use template parameters to make this more flexible
+// TODO change leafs to be split into 2 numbers, so that smart contracts can pass in keccak256 hashes of the leafs.
+template SecretdMerkleTree() {
+    signal input secret; // Secret value hashed with leafs before tree construction.
     signal input leafs[8];
-    signal input shuffledRoot;
-    signal input shuffledLeafs[8];
     signal input pathIndices_0[4];
     signal input pathIndices_1[2];
     signal input pathIndices_2;
+    signal output secretRoot;
 
     // Hash first layer of leafs.
     signal internal_0[4];
     component selectors_0[4];
     component hashers_0[4];
+    component secret_hashers[8];
 
     for (var i=0; i<4; i++) {
+        // Hash leafs with secret.
+        secret_hashers[2 * i] = HashLeftRight();
+        secret_hashers[2 * i].left <== leafs[2 * i]; // Left is always the leaf.
+        secret_hashers[2 * i].right <== secret; // Right is always the secret.
+        secret_hashers[2 * i + 1] = HashLeftRight();
+        secret_hashers[2 * i + 1].left <== leafs[2 * i + 1];
+        secret_hashers[2 * i + 1].right <== secret;
+
         selectors_0[i] = DualMux();
-        // Could the leaves be passed in in an as hidden leafs? Then we just need a verification to show that every public leaf is used.
-        selectors_0[i].in[0] <== shuffledLeafs[2 * i];
-        selectors_0[i].in[1] <== shuffledLeafs[2 * i + 1];
+        selectors_0[i].in[0] <== secret_hashers[2 * i].out;
+        selectors_0[i].in[1] <== secret_hashers[2 * i + 1].out;
         selectors_0[i].s <== pathIndices_0[i];
 
         hashers_0[i] = HashLeftRight();
@@ -87,23 +96,7 @@ template ShuffledMerkleTree() {
     hasher_2.left <== selector_2.out[0];
     hasher_2.right <== selector_2.out[1];
 
-    // Constrain shuffledRoot to equal out.
-    shuffledRoot === hasher_2.out;
-
-    // Additionally we need to iterate through the public and private leafs to confirm all of them are used.
-    signal leafIndexUsed[8][8];
-    component equal[8][8];
-    signal temp[8][8];
-
-    for (var i=0; i<8; i++) {
-        for (var j=0; j<8; j++) {
-            temp[i][j] <== leafs[i] - shuffledLeafs[j];
-            if (temp[i][j] == 0) {leafIndexUsed[i][j] === 1;}
-            else {leafIndexUsed[i][j] === 0;}
-            // leafIndexUsed[i][j] <== shuffledLeafs[i] == leafs ? 1 : 0;
-        }
-        // leafIndexUsed[i][0] <== equal[i][0].out ? 1 : 0;
-    }
+    secretRoot <== hasher_2.out;
 }
 
-component main {public [leafs, shuffledRoot]} = ShuffledMerkleTree();
+component main {public [leafs]} = SecretdMerkleTree();
