@@ -111,6 +111,14 @@ elif [[ $CIRCUIT_NAME == "secret_merkle_tree" ]]; then
     echo "{\"keccakLeafs\": [\"1\", \"2\", \"3\", \"4\"], \"secret\": \"10\", \"pathIndices\": [\"0\"]}" > ./${CIRCUIT_NAME}_input.json
 elif [[ $CIRCUIT_NAME == "secret_merkle_proof" ]]; then
     echo "{\"keccakLeaf\": [\"1\", \"2\"], \"secret\": \"10\", \"pathIndices\": [\"0\"], \"pathElements\": [\"20720647776736805995271599293687983903163066371706795988900528210329614571103\"], \"root\": \"12496568937140143640907443226343187050369326205835973023618878027235704289017\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "QuinSelector" ]]; then
+    echo "{\"in\": [\"10\", \"20\"], \"index\": \"0\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "shuffled_merkle_tree" ]]; then
+    echo "{\"keccakLeafs\": [\"1\", \"2\", \"3\", \"4\"], \"pathIndices\": [\"0\"], \"leafIndices\": [\"1\", \"0\"]}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "vedaMerkleTree" ]]; then
+    echo "{\"leafsInTwo\": [[\"1\", \"2\"], [\"3\", \"4\"], [\"5\", \"6\"]], \"pathIndices\": [\"1\", \"0\", \"0\"], \"secretLeaf\": \"100\"}" > ./${CIRCUIT_NAME}_input.json
+elif [[ $CIRCUIT_NAME == "vedaMerkleProof" ]]; then
+    echo "{\"leafInTwo\": [\"1\", \"2\"], \"secretLeafHash\": \"13280099886815029221288666002737874468148381556221134405564391793586496323681\", \"rootWithSecret\": \"12247190692179946320417539434998885926062420871238534164534302033690612888116\", \"pathElements\": [\"100\", \"7179436869341541572761140212288781131921875879700904991609792924799895462951\"], \"pathIndices\": [\"0\", \"0\"]}" > ./${CIRCUIT_NAME}_input.json
 else
     echo "[ERROR] No inputs: create branch for CIRCUIT_NAME '$CIRCUIT_NAME' with input data in run_all.sh script"
     exit 1

@@ -47,4 +47,38 @@ contract MiMCTest is Test {
         uint256 expectedRoot = 12496568937140143640907443226343187050369326205835973023618878027235704289017;
         assertEq(root, expectedRoot, "Root does not match expected output");
     }
+
+    function testShuffledMerkleTree() external {
+        uint256 leafA = hasher.hashMulti(1, 2);
+        uint256 leafB = hasher.hashMulti(3, 4);
+        uint256 root = hasher.hashMulti(leafB, leafA);
+
+        console.log("Root: %d", root);
+        uint256 expectedRoot = 12496568937140143640907443226343187050369326205835973023618878027235704289017;
+        // assertEq(root, expectedRoot, "Root does not match expected output");
+    }
+
+    function testVedaMerkleTree() external {
+        uint256 leafA = hasher.hashMulti(1, 2);
+        uint256 leafB = hasher.hashMulti(3, 4);
+        uint256 leafC = hasher.hashMulti(5, 6);
+        uint256 secret = 100;
+
+        uint256 AS = hasher.hashMulti(leafA, secret);
+        uint256 ANull = hasher.hashMulti(leafA, 0);
+        uint256 BC = hasher.hashMulti(leafB, leafC);
+
+        uint256 rootWithNull = hasher.hashMulti(ANull, BC);
+        uint256 rootWithSecret = hasher.hashMulti(AS, BC);
+        uint256 secretHash = hasher.hash(secret);
+
+        uint256 expectedSecretHash = 13280099886815029221288666002737874468148381556221134405564391793586496323681;
+        assertEq(secretHash, expectedSecretHash, "Secret hash does not match expected output");
+
+        console.log("Root with secret: %d", rootWithSecret);
+        console.log("Root with null: %d", rootWithNull);
+        console.log("Secret hash: %d", secretHash);
+        console.log("Leaf BC: %d", BC);
+        console.log("Leaf hash A: %d", hasher.hash(leafA));
+    }
 }

@@ -2,7 +2,8 @@ pragma circom 2.0.0;
 
 include "../node_modules/circomlib/circuits/mimc.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
-
+include "QuinSelector.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
 
 template HashLeftRight() {
     signal input left;
@@ -32,78 +33,92 @@ template DualMux() {
     out[1] <== (in[0] - in[1]) * s + in[1];
 }
 
-// TODO this code does not really work because
-template ShuffledMerkleTree() {
-    signal input leafs[8];
-    signal input shuffledRoot;
-    signal input shuffledLeafs[8];
-    signal input pathIndices_0[4];
-    signal input pathIndices_1[2];
-    signal input pathIndices_2;
-
-    // Hash first layer of leafs.
-    signal internal_0[4];
-    component selectors_0[4];
-    component hashers_0[4];
-
-    for (var i=0; i<4; i++) {
-        selectors_0[i] = DualMux();
-        // Could the leaves be passed in in an as hidden leafs? Then we just need a verification to show that every public leaf is used.
-        selectors_0[i].in[0] <== shuffledLeafs[2 * i];
-        selectors_0[i].in[1] <== shuffledLeafs[2 * i + 1];
-        selectors_0[i].s <== pathIndices_0[i];
-
-        hashers_0[i] = HashLeftRight();
-        hashers_0[i].left <== selectors_0[i].out[0];
-        hashers_0[i].right <== selectors_0[i].out[1];
-        internal_0[i] <== hashers_0[i].out;
+// TODO so even with just 2 leafs, pathIndices is still length 1, which it is actually never used. not a deal breaker since everything else works though.
+template ShuffledMerkleTree(LEAF_COUNT) {
+    signal input keccakLeafs[2 * LEAF_COUNT];
+    signal output shuffledRoot;
+    signal input leafIndices[LEAF_COUNT];
+    // Determine array length.
+    var arrayLength = 0;
+    for (var i=0; 1 != LEAF_COUNT / (2 ** i); i++) {
+        arrayLength += LEAF_COUNT / 2 ** (i + 1);
     }
+    signal input pathIndices[arrayLength]; // Do not need pathIndices for the root.
 
-    // Hash the next layer
-    signal internal_1[2];
-    component selectors_1[2];
-    component hashers_1[2];
-
-    for (var i=0; i<2; i++) {
-        selectors_1[i] = DualMux();
-        selectors_1[i].in[0] <== internal_0[2 * i];
-        selectors_1[i].in[1] <== internal_0[2 * i + 1];
-        selectors_1[i].s <== pathIndices_1[i];
-
-        hashers_1[i] = HashLeftRight();
-        hashers_1[i].left <== selectors_1[i].out[0];
-        hashers_1[i].right <== selectors_1[i].out[1];
-        internal_1[i] <== hashers_1[i].out;
-    }
-
-    // Hash the final layer
-    signal internal_2;
-    component selector_2 = DualMux();
-    selector_2.in[0] <== internal_1[0];
-    selector_2.in[1] <== internal_1[1];
-    selector_2.s <== pathIndices_2;
-
-    component hasher_2 = HashLeftRight();
-    hasher_2.left <== selector_2.out[0];
-    hasher_2.right <== selector_2.out[1];
-
-    // Constrain shuffledRoot to equal out.
-    shuffledRoot === hasher_2.out;
-
-    // Additionally we need to iterate through the public and private leafs to confirm all of them are used.
-    signal leafIndexUsed[8][8];
-    component equal[8][8];
-    signal temp[8][8];
-
-    for (var i=0; i<8; i++) {
-        for (var j=0; j<8; j++) {
-            temp[i][j] <== leafs[i] - shuffledLeafs[j];
-            if (temp[i][j] == 0) {leafIndexUsed[i][j] === 1;}
-            else {leafIndexUsed[i][j] === 0;}
-            // leafIndexUsed[i][j] <== shuffledLeafs[i] == leafs ? 1 : 0;
+    // Verify all indexes are used.
+    component eqs[LEAF_COUNT][LEAF_COUNT];
+    component calcTotal[LEAF_COUNT];
+    for (var i = 0; i< LEAF_COUNT; i++) {
+        calcTotal[i] = CalculateTotal(LEAF_COUNT);
+        for (var j = 0; j< LEAF_COUNT; j++) {
+            eqs[i][j] = IsEqual();
+            eqs[i][j].in[0] <== i; // We check that i in an index in the leafIndices array to prevent repeat leafs.
+            eqs[i][j].in[1] <== leafIndices[j];
+            calcTotal[i].in[j] <== eqs[i][j].out;
         }
-        // leafIndexUsed[i][0] <== equal[i][0].out ? 1 : 0;
+        calcTotal[i].out === 1;
     }
+
+    // Internal signals.
+    signal leafs[LEAF_COUNT];
+
+    // Components.
+    component keccakLeafHashers[LEAF_COUNT];
+    component quinSelectors[LEAF_COUNT];
+    component selectors[arrayLength - (LEAF_COUNT/2)];
+    component hashers[arrayLength]; // Add LEAF_COUNT to pre-hash every leaf with the secret.
+
+
+    // Hash keccakLeafs into leafs.
+    for (var i=0; i<LEAF_COUNT; i++) {
+        keccakLeafHashers[i] = HashLeftRight();
+        keccakLeafHashers[i].left <== keccakLeafs[i * 2];
+        keccakLeafHashers[i].right <== keccakLeafs[i * 2 + 1];
+        leafs[i] <== keccakLeafHashers[i].out;
+    }
+
+    // Hash leaf layer.
+    // Note no selectors are used because leafs are hashed in order of the leafIndices.
+    for (var i=0; i<LEAF_COUNT/2; i++) {
+        quinSelectors[2 * i] = QuinSelector(LEAF_COUNT);
+        for (var j=0; j<LEAF_COUNT; j++) {
+            quinSelectors[2 * i].in[j] <== leafs[j];
+        }
+        quinSelectors[2 * i].index <== leafIndices[2 * i];
+        quinSelectors[2 * i + 1] = QuinSelector(LEAF_COUNT);
+        for (var j=0; j<LEAF_COUNT; j++) {
+            quinSelectors[2 * i + 1].in[j] <== leafs[j];
+        }
+        quinSelectors[2 * i + 1].index <== leafIndices[2 * i + 1];
+
+        hashers[i] = HashLeftRight();
+        hashers[i].left <== quinSelectors[2 * i].out;
+        hashers[i].right <== quinSelectors[2 * i + 1].out;
+    }
+
+    var hasherOffset = LEAF_COUNT / 2;
+    var hasherIndex = 0;
+    var selectorOffset = 0;
+    // Hash internal digests
+    for (var i=1; 1 != LEAF_COUNT / (2 ** i); i++) {
+        var iterations = LEAF_COUNT / (2 ** (i + 1));
+        for (var j=0; j<iterations; j++) {
+            selectors[j + selectorOffset] = DualMux();
+            selectors[j + selectorOffset].in[0] <== hashers[hasherIndex].out;
+            selectors[j + selectorOffset].in[1] <== hashers[hasherIndex + 1].out;
+            selectors[j + selectorOffset].s <== pathIndices[j + selectorOffset];
+
+            hashers[j + hasherOffset] = HashLeftRight();
+            hashers[j + hasherOffset].left <== selectors[j + selectorOffset].out[0];
+            hashers[j + hasherOffset].right <== selectors[j + selectorOffset].out[1];
+
+            hasherIndex += 2;
+        }
+        hasherOffset += iterations;
+        selectorOffset += iterations;
+    }
+
+    shuffledRoot <== hashers[hasherOffset - 1].out;
 }
 
-component main {public [leafs, shuffledRoot]} = ShuffledMerkleTree();
+component main {public [keccakLeafs]} = ShuffledMerkleTree(2);

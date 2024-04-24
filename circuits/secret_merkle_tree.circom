@@ -37,6 +37,9 @@ template DualMux() {
 // This is nice since it reduces the input amount to 2 inputs, but it means users would need to verify themselves that the hash matches the leafs.
 // TODO what is interesting is we could maybe do the hash method above, but then in the contract we provide the function to hash an array of leafs down
 // then people can submit stings to show that we provided the wrong hash?
+// Could even make the hash be the merkle root if the leafs are not hashed with the secret? That way it is easier for people to verify the hash
+// Since it is using a merkle setup.
+// This circuit could even return the normal hash too.
 template SecretdMerkleTree(LEAF_COUNT) {
     signal input secret; // Secret value hashed with leafs before tree construction.
     signal input keccakLeafs[2 * LEAF_COUNT]; // Each leaf is composed of 2 keccakLeafs where the first is the left 128 bits and the second is the right 128 bits.
@@ -96,4 +99,4 @@ template SecretdMerkleTree(LEAF_COUNT) {
     secretRoot <== hashers[hasherOffset - 1].out;
 }
 
-component main {public [keccakLeafs]} = SecretdMerkleTree(256);
+component main {public [keccakLeafs]} = SecretdMerkleTree(1024);
