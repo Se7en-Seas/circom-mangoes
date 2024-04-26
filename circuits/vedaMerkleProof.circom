@@ -105,4 +105,31 @@ template VedaMerkleProof(LEVELS) {
     rootWithSecret === hashers[LEVELS].out;
 }
 
+template VedaMerkleProofN(LEVELS, N) {
+    // Public signals
+    signal input leafInTwo[2][N];
+    signal input secretLeafHash[N]; // Used to constrain leafInTwo to NOT be the secret leaf.
+    signal input rootWithSecret[N];
+
+    // Private signals
+    signal input pathElements[LEVELS][N];
+    signal input pathIndices[LEVELS][N];
+
+    // Create N instances of VedaMerkleProof.
+    component provers[N];
+    for (var i=0; i<N; i++) {
+        provers[i] = VedaMerkleProof(LEVELS);
+        provers[i].leafInTwo[0] <== leafInTwo[0][i];
+        provers[i].leafInTwo[1] <== leafInTwo[1][i];
+        provers[i].secretLeafHash <== secretLeafHash[i];
+        provers[i].rootWithSecret <== rootWithSecret[i];
+        for (var j=0; j<LEVELS; j++) {
+            provers[i].pathElements[j] <== pathElements[j][i];
+            provers[i].pathIndices[j] <== pathIndices[j][i];
+
+        }
+    }
+}
+
+// component main {public [leafInTwo, secretLeafHash, rootWithSecret]} = VedaMerkleProofN(2, 10);
 component main {public [leafInTwo, secretLeafHash, rootWithSecret]} = VedaMerkleProof(2);
