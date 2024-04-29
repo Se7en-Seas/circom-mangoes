@@ -173,4 +173,4 @@ template VedaMerkleTree(TREE_CAPACITY) {
     rootWithSecret <== hashersWithSecret[layerIterations - 1].out;
 }
 
-component main = VedaMerkleTree(4);
+component main = VedaMerkleTree(1024);

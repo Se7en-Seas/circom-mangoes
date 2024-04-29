@@ -36,7 +36,7 @@ POTS_DIR=pots
 
 
 # power value for "powersOfTau28" pre-generated setup files
-POWERTAU=22
+POWERTAU=24
 
 # uncomment to output every actual command being run
 # set -x

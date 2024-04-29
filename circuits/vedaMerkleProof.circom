@@ -55,6 +55,24 @@ template HashSingle() {
     out <== hasher.out;
 }
 
+// Flow 
+// strategist submits proof to AVS operators offchain
+// AVS operators verify the proof offchain, as well as that the inputs are good
+// AVS operators sign some message
+// message allows strategist to submit rebalance onchain.
+
+// TODO change this so that it accepts multiple leafs as private inputs.
+// Then add a new public input which is a keccak256 hash of all the leafs.
+// Then the circuit verifies that when it hashes down all the private leafs into a single hash, that hash
+// matches the public hash.
+// Then avs operators can be given all the info they need to verify the proof offchain,
+// as well as checking a couple things like the secret leaf hash, root, and nonce match the ones in the contract.
+// 
+
+// TODO this needs to accept multiple leafs as private inputs, and accept a new public leaf digest hash
+// TODO add nonce logic to this so that each batch of proofs will have different proofs.
+// TODO as more proofs are added this circuit will get bigger and add to verification time, so it might be better to 
+// try and optimize by storing the last two bits of each leaf in one signal, then we constrain the amount of leafs per proof to be less than 128. 
 template VedaMerkleProof(LEVELS) {
     
     // Public signals
